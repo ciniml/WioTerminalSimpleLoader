@@ -31,6 +31,7 @@
 #include "definitions.h"                // SYS function prototypes
 #include <cstdint>
 #include <array>
+#include <vector>
 
 // *****************************************************************************
 // *****************************************************************************
@@ -125,7 +126,6 @@ void APP_Initialize ( void )
     LCD_RESET_Clear();
     LCD_RESET_OutputEnable();
 
-    LCD_BACKLIGHT_CTR_Clear();
     LCD_BACKLIGHT_CTR_OutputEnable();
 }
 
@@ -289,7 +289,8 @@ static void ResetLcd()
     WriteLcdCommandData<1>(TFT_MADCTL, {TFT_MAD_BGR | 0xe0});
     LCD_CS_Set();
 
-    LCD_BACKLIGHT_CTR_Set();
+    LCD_BACKLIGHT_CTR_OutputEnable();
+    TC0_CompareStart();
 }
 
 static void SetLcdColumnAddress(std::uint_fast16_t start, std::uint_fast16_t end)
@@ -361,6 +362,7 @@ static void FillLcd(std::uint_fast16_t x0, std::uint_fast16_t y0, std::uint_fast
  */
 
 static int color = 0;
+static std::uint8_t backlightOutput = 0;
 
 void APP_Tasks ( void )
 {
@@ -376,6 +378,7 @@ void APP_Tasks ( void )
 
             ResetLcd();
             FillLcd(0, 0, 320, 240, 0);
+            NVMCTRL_Initialize();
             if (appInitialized)
             {
                 appData.state = APP_STATE_SERVICE_TASKS;
@@ -385,6 +388,12 @@ void APP_Tasks ( void )
 
         case APP_STATE_SERVICE_TASKS:
         {
+            TC0_Compare8bitMatch0Set(backlightOutput);
+            backlightOutput += 1;
+
+            if( backlightOutput > 100 ) {
+                backlightOutput = 0;
+            }
             USER_LED_Toggle();
             FSYNC_OUT_Set();
             switch(color)
@@ -394,11 +403,55 @@ void APP_Tasks ( void )
                 case 2: FillLcd(0, 0, 320, 240, 0x1f << 0); break;
                 case 3: FillLcd(0, 0, 320, 240, 0); break;
             }
-            color = (color + 1) & 3;
+            //color = (color + 1) & 3;
             FSYNC_OUT_Clear();
+            bool success = false;
+            if( SYS_FS_Mount("/dev/mmcblka1", "/mnt/sd", SYS_FS_FILE_SYSTEM_TYPE::FAT, 0, nullptr) == SYS_FS_RES_SUCCESS ) {
+                auto handle = SYS_FS_FileOpen("/mnt/sd/app.bin", SYS_FS_FILE_OPEN_ATTRIBUTES::SYS_FS_FILE_OPEN_READ);
+                if( handle != SYS_FS_HANDLE_INVALID ) {
+                    std::uint32_t pageBuffer[NVMCTRL_FLASH_PAGESIZE/4];
+                    auto fileSize = SYS_FS_FileSize(handle);
+                    std::uintptr_t baseAddress = 0x4000;
+                    if( fileSize > 0 ) {
+                        for(std::uintptr_t bytesWritten = 0; bytesWritten < fileSize; bytesWritten += NVMCTRL_FLASH_PAGESIZE) {
+                            if( (bytesWritten & (NVMCTRL_FLASH_BLOCKSIZE-1)) == 0 ) {
+                                // Erase block
+                                NVMCTRL_BlockErase(bytesWritten + baseAddress);
+                                while(NVMCTRL_IsBusy());
+                            }
+                            auto bytesToRead = fileSize - bytesWritten;
+                            bytesToRead = bytesToRead > NVMCTRL_FLASH_PAGESIZE ? NVMCTRL_FLASH_PAGESIZE : bytesToRead;
+                            SYS_FS_FileRead(handle, pageBuffer, bytesToRead);
+                            memset(reinterpret_cast<std::uint8_t*>(pageBuffer) + bytesToRead, 0xff, NVMCTRL_FLASH_PAGESIZE - bytesToRead);
+                            NVMCTRL_PageWrite(pageBuffer, baseAddress+bytesWritten);
+                            while(NVMCTRL_IsBusy());
+                        }
+                        SYS_FS_FileClose(handle);
+                        success = true;
+                    }
+                }
+                SYS_FS_Unmount("/sd");
+            }
+
+            if(success) {
+                appData.state = APP_STATE_END;
+            }
+
+            
             break;
         }
+        case APP_STATE_END:
+            TC0_Compare8bitMatch0Set(backlightOutput);
+            backlightOutput += 1;
 
+            if( backlightOutput > 100 ) {
+                backlightOutput = 0;
+            }
+            USER_LED_Toggle();
+            FSYNC_OUT_Set();
+            FillLcd(0, 0, 320, 240, 0x3f << 5);
+            FSYNC_OUT_Clear();
+            break;
         
         /* The default state should never be executed. */
         default:

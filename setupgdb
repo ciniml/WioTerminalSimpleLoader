@@ -1,0 +1,10 @@
+target remote localhost:3333
+symbol-file ./build/MyProject.elf
+add-symbol-file ../sd_updater/sd_updater.Seeeduino.samd.seeed_wio_terminal.elf
+monitor reset halt
+#hbreak main
+#dis break 1.1
+#hbreak Reset_Handler
+#hbreak *0x04001b2a
+#dis break 2.1
+cont

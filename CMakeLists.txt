@@ -28,4 +28,6 @@ set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 
 add_custom_target(${PROJECT_NAME}.bin ALL DEPENDS ${PROJECT_NAME}.elf)
-add_custom_command(TARGET ${PROJECT_NAME}.bin COMMAND arm-none-eabi-objcopy ARGS -O binary ${PROJECT_NAME}.elf ${PROJECT_NAME}.bin)
+add_custom_target(${PROJECT_NAME}.hex ALL DEPENDS ${PROJECT_NAME}.elf)
+add_custom_command(TARGET ${PROJECT_NAME}.bin COMMAND arm-none-eabi-objcopy ARGS -O binary ${PROJECT_NAME}.elf -S -O binary -R .comment -R .eh_frame ${PROJECT_NAME}.bin)
+add_custom_command(TARGET ${PROJECT_NAME}.hex COMMAND arm-none-eabi-objcopy ARGS -O binary ${PROJECT_NAME}.elf -S -g -O ihex -R .comment -R .eh_frame ${PROJECT_NAME}.hex)

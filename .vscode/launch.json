@@ -34,7 +34,8 @@
             "filterStdout": false,
             "logging": {
                 "engineLogging": true
-            }
+            },
+            "preLaunchTask": "build"
         }
     ]
 }
