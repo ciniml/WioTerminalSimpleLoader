@@ -6,7 +6,7 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/firmware/src/third_party/rtos/FreeRTOS/Source/include"
             ],
-            "defines": [],
+            "defines": ["__SAMD51__", "__SAMD51_HARMONY__"],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",

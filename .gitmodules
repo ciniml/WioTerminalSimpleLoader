@@ -1,0 +1,3 @@
+[submodule "lgfx"]
+	path = lgfx
+	url = https://github.com/lovyan03/LovyanGFX.git

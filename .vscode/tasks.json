@@ -7,9 +7,19 @@
             "label": "build",
             "type": "shell",
             "command": "mkdir -p ${workspaceFolder}/build && cd ${workspaceFolder}/build && cmake -G Ninja .. && ninja",
-            "problemMatcher": [
-                "$gcc"
-            ]
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": ["relative", "${workspaceFolder}/build"],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(error|warning):\\s+(.+)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        
         }
     ]
 }

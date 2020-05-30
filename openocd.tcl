@@ -1,24 +1,16 @@
-interface ftdi
-ftdi_device_desc "Dual RS232"
-ftdi_vid_pid 0x0403 0x6010
-
-ftdi_layout_init 0x0508 0x0f1b
-ftdi_layout_signal nTRST -data 0
-ftdi_layout_signal nSRST -data 0x0020
-
-transport select swd
-ftdi_layout_signal SWD_EN -data 0
-
-adapter_nsrst_delay 100
-adapter_nsrst_assert_width 100
 
 set CHIPNAME samd51p19a
 source [find target/atsame5x.cfg]
 
+adapter speed 3600
+gdb_flash_program enable
+gdb_breakpoint_override hard
+
 init
 targets
 
-proc flash_bin {bin_file} {
+# for FT2232D workaround
+proc flash_bin_ft {bin_file} {
     reset halt
     set file_size [file size $bin_file]
     set end_addr [expr $file_size + 0x4000]
@@ -27,6 +19,13 @@ proc flash_bin {bin_file} {
         sleep 200
     }
     flash write_image $bin_file 0x4000
+    verify_image $bin_file 0x4000 
+    echo "flashing $bin_file complete"
+    reset halt
+}
+proc flash_bin {bin_file} {
+    reset halt
+    flash write_image erase $bin_file 0x4000
     verify_image $bin_file 0x4000 
     echo "flashing $bin_file complete"
     reset halt
