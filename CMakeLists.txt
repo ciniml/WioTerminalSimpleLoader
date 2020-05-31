@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(MyProject VERSION 0.1.0)
+project(SimpleLoader VERSION 0.1.0)
 
 file(GLOB_RECURSE SOURCES "firmware/src/*.c" "lgfx/src/*.c")
 file(GLOB_RECURSE SOURCES_CXX "firmware/src/*.cpp" "lgfx/src/*.cpp")
@@ -29,8 +29,9 @@ set_target_properties(${PROJECT_NAME}.elf PROPERTIES LINK_DEPENDS ${CMAKE_SOURCE
 
 set(CMAKE_C_COMPILER arm-none-eabi-gcc)
 set(CMAKE_CXX_COMPILER arm-none-eabi-g++)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -std=c11 -g -Os -D__SAMD51__ -D__SAMD51_HARMONY__ -DWIO_TERMINAL -DF_CPU=120000000UL")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -std=c++14 -g -Os -D__SAMD51__ -D__SAMD51_HARMONY__ -DWIO_TERMINAL -DF_CPU=120000000UL")
+set(COMMON_FLAGS "-mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -g -Os -D__SAMD51__ -D__SAMD51_HARMONY__ -DWIO_TERMINAL -DF_CPU=120000000UL -ffunction-sections -fdata-sections")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 ${COMMON_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 ${COMMON_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-gc-sections \"-T${CMAKE_SOURCE_DIR}/firmware/linker.ld\" -g -Os")
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 set(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")

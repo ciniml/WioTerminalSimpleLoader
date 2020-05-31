@@ -1,5 +1,5 @@
 target remote localhost:3333
-symbol-file ./build/MyProject.elf
+symbol-file ./build/SimpleLoader.elf
 add-symbol-file ../sd_updater/sd_updater.Seeeduino.samd.seeed_wio_terminal.elf
 monitor reset halt
 #hbreak main

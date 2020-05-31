@@ -27,19 +27,17 @@
 // *****************************************************************************
 // *****************************************************************************
 
+#include "configuration.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "configuration.h"
-#include "FreeRTOS.h"
-#include "task.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
-
 extern "C" {
-
 #endif
 // DOM-IGNORE-END
 
@@ -64,7 +62,11 @@ typedef enum
 {
     /* Application's state machine's initial state. */
     APP_STATE_INIT=0,
-    APP_STATE_SERVICE_TASKS,
+    APP_STATE_NO_SD,
+    APP_STATE_LOAD_SD,
+    APP_STATE_SELECT_APP,
+    APP_STATE_LOAD_APP,
+    APP_STATE_ERROR,
     APP_STATE_END,
     /* TODO: Define states used by the application state machine. */
 
@@ -88,9 +90,11 @@ typedef struct
 {
     /* The application's current state */
     APP_STATES state;
-
-    /* TODO: Define any additional data used by the application. */
-
+    APP_STATES fallbackState;
+    uint32_t selectedApp;
+    uint32_t appsInPage;
+    uint32_t prevSwitchInputs;
+    bool forceUpdateScreen;
 } APP_DATA;
 
 // *****************************************************************************
@@ -173,15 +177,13 @@ void APP_Initialize ( void );
 
 void APP_Tasks( void );
 
-
-
-#endif /* _APP_H */
-
 //DOM-IGNORE-BEGIN
 #ifdef __cplusplus
 }
 #endif
 //DOM-IGNORE-END
+
+#endif /* _APP_H */
 
 /*******************************************************************************
  End of File
