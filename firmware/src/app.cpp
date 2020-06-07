@@ -8,6 +8,33 @@
 
 #include "appmanager.hpp"
 
+
+typedef enum
+{
+    /* Application's state machine's initial state. */
+    APP_STATE_INIT=0,
+    APP_STATE_NO_SD,
+    APP_STATE_LOAD_SD,
+    APP_STATE_SELECT_APP,
+    APP_STATE_LOAD_APP,
+    APP_STATE_ERROR,
+    APP_STATE_END,
+    /* TODO: Define states used by the application state machine. */
+
+} APP_STATES;
+typedef struct
+{
+    /* The application's current state */
+    APP_STATES state;
+    APP_STATES fallbackState;
+    std::uint32_t startItemIndex;
+    std::uint32_t selectedApp;
+    std::uint32_t appsInPage;
+    std::uint32_t prevSwitchInputs;
+    bool forceUpdateScreen;
+    
+} APP_DATA;
+
 APP_DATA appData;
 
 static constexpr std::uint32_t SwitchUp    = (1u << 0);
@@ -21,6 +48,7 @@ void APP_Initialize ( void )
 {
     appData.state = APP_STATE_INIT;
     appData.selectedApp = 0;
+    appData.startItemIndex = 0;
     appData.prevSwitchInputs = 0;
     appData.forceUpdateScreen = false;
     USER_LED_OutputEnable();
@@ -68,7 +96,7 @@ void APP_Tasks ( void )
             lcd.setTextDatum(lgfx::textdatum::middle_center);
             lcd.drawString("NO TF CARD", 160, 120);
 
-            auto error = appManager.scan([](std::size_t, const AppDescription&){return false;});
+            auto error = appManager.scan(0, [](std::size_t, const AppDescription&){return false;});
             if( error == decltype(error)::Success) {
                 appData.state = APP_STATE_LOAD_SD;
             }
@@ -85,10 +113,10 @@ void APP_Tasks ( void )
             lcd.drawString("LOADING...", 160, 120);
 
             appData.appsInPage = 0;
-            auto error = appManager.scan([](std::size_t index, const AppDescription& description){
+            auto error = appManager.scan(appData.startItemIndex, [](std::size_t index, const AppDescription& description){
                 apps[index] = description;
                 appData.appsInPage = index + 1;
-                return index < apps.size();
+                return index + 1 < apps.size(); // return false if this is the last app in this page.
             });
             switch(error)
             {
@@ -99,7 +127,8 @@ void APP_Tasks ( void )
                 case AppManager::Error::Success: {
                     appData.state = APP_STATE_SELECT_APP;
                     appData.forceUpdateScreen = true;
-                    appData.selectedApp = 0;
+                    auto maxAppIndex = appData.appsInPage > 0 ? appData.appsInPage - 1 : 0;
+                    appData.selectedApp = appData.selectedApp < appData.appsInPage ? appData.selectedApp : maxAppIndex;
                     break;
                 }
             }
@@ -116,11 +145,23 @@ void APP_Tasks ( void )
                 if( appData.selectedApp > 0 ) {
                     appData.selectedApp--;
                 }
+                else if( appData.startItemIndex > 0 ) {
+                    appData.startItemIndex = appData.startItemIndex > apps.size() ? appData.startItemIndex - apps.size() : 0;
+                    appData.selectedApp = apps.size();
+                    appData.state = APP_STATE_LOAD_SD;
+                    break;
+                }
                 moved = true;
             }
             if( pushedInputs & SwitchDown ) {
                 if( appData.selectedApp < appData.appsInPage - 1 ) {
                     appData.selectedApp++;
+                }
+                else if( appData.appsInPage == apps.size() ) {
+                    appData.selectedApp = 0;
+                    appData.startItemIndex += apps.size();
+                    appData.state = APP_STATE_LOAD_SD;
+                    break;
                 }
                 moved = true;
             }
@@ -130,26 +171,26 @@ void APP_Tasks ( void )
             }
             if( moved || appData.forceUpdateScreen ) {
                 appData.forceUpdateScreen = false;
-                lcd.setWindow(0, 0, 320, 240);
                 lcd.clear(0);
                 lcd.setColor(lgfx::color888(255, 255, 255));
                 lcd.setTextDatum(lgfx::textdatum::top_left);
                 lcd.setFont(&fonts::FreeMono9pt7b);
-                lcd.setWindow(0, 0, 160, 240);
-                for(std::size_t i = 0; i < apps.size(); i++ ) {
+                for(std::size_t i = 0; i < appData.appsInPage; i++ ) {
                     const auto& description = apps.at(i);
-                    lcd.drawString(description.getName(), 0, 240*i/apps.size()+5);
+                    lcd.drawString(description.getName(), 5, 240*i/apps.size()+5);
                     if( i == appData.selectedApp ) {
-                        lcd.drawRect(0, 240*appData.selectedApp/apps.size(), 160, 240/apps.size());
+                        lcd.drawRect(5, 240*appData.selectedApp/apps.size(), 160-5, 240/apps.size());
                     }
                 }
                 {
                     const auto& description = apps.at(appData.selectedApp);
+                    lcd.fillRect(160, 0, 160, 240, 0);
                     lcd.setTextWrap(true, true);
-                    lcd.setWindow(160, 120, 320, 240);
+                    lcd.setClipRect(160, 120, 160, 120);
                     lcd.setTextDatum(textdatum_t::top_left);
-                    lcd.drawString(description.getDescription(), 160, 120);
-                    
+                    lcd.setCursor(0, 0);
+                    lcd.print(description.getDescription());
+                    lcd.clearClipRect();
                     char pathBuffer[65];
                     if( appManager.getAppIconPath(description, pathBuffer, sizeof(pathBuffer)) == AppManager::Error::Success ) {
                         SDCardMount mount;
@@ -177,6 +218,9 @@ void APP_Tasks ( void )
                 return true;
             });
             appData.fallbackState = APP_STATE_SELECT_APP;
+            lcd.setTextWrap(true, true);
+            lcd.setClipRect(0, 200, 320, 40);
+            lcd.setCursor(0, 0);
             switch(result) {
                 case AppManager::Error::Success: {
                     appManager.run(0x4000);
@@ -184,22 +228,23 @@ void APP_Tasks ( void )
                     break;
                 }
                 case AppManager::Error::BinaryTooLarge: {
-                    lcd.drawString("Error:\n app binary too large.", 160, 200);
+                    lcd.print("Error:\n app binary too large.");
                     appData.state = APP_STATE_ERROR;
                     break;
                 }
                 case AppManager::Error::FailedToOpen: {
-                    lcd.drawString("Error:\n failed to open bin file.", 160, 200);
+                    lcd.print("Error:\n failed to open bin file.");
                     appData.state = APP_STATE_ERROR;
                     break;
                 }
                 case AppManager::Error::FailedToMount: {
-                    lcd.drawString("Error:\n failed to mount TF card.", 160, 200);
+                    lcd.print("Error:\n failed to mount TF card.");
                     appData.state = APP_STATE_ERROR;
                     appData.fallbackState = APP_STATE_NO_SD;
                     break;
                 }
             }
+            lcd.clearClipRect();
             break;
         }
         case APP_STATE_ERROR: 

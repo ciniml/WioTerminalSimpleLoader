@@ -58,44 +58,6 @@ extern "C" {
     determine the behavior of the application at various times.
 */
 
-typedef enum
-{
-    /* Application's state machine's initial state. */
-    APP_STATE_INIT=0,
-    APP_STATE_NO_SD,
-    APP_STATE_LOAD_SD,
-    APP_STATE_SELECT_APP,
-    APP_STATE_LOAD_APP,
-    APP_STATE_ERROR,
-    APP_STATE_END,
-    /* TODO: Define states used by the application state machine. */
-
-} APP_STATES;
-
-
-// *****************************************************************************
-/* Application Data
-
-  Summary:
-    Holds application data
-
-  Description:
-    This structure holds the application's data.
-
-  Remarks:
-    Application strings and buffers are be defined outside this structure.
- */
-
-typedef struct
-{
-    /* The application's current state */
-    APP_STATES state;
-    APP_STATES fallbackState;
-    uint32_t selectedApp;
-    uint32_t appsInPage;
-    uint32_t prevSwitchInputs;
-    bool forceUpdateScreen;
-} APP_DATA;
 
 // *****************************************************************************
 // *****************************************************************************

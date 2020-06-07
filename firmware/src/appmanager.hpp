@@ -161,12 +161,12 @@ public:
         NoIcon,
     };
 private:
-    static bool readDescription(const char* appsRoot, const char* appName, AppDescription& description);
+    static void readDescription(const char* appsRoot, const char* appName, AppDescription& description);
     static Error getIconPath(AppIconFormat format, const char* location, const char* baseName, char* buffer, std::size_t bufferSize);
 public:
     Error getAuthorIconPath(const AppDescription& description, char* buffer, std::size_t bufferSize);
     Error getAppIconPath(const AppDescription& description, char* buffer, std::size_t bufferSize);
-    Error scan(std::function<bool (std::size_t index, const AppDescription& description)>&& callback);
+    Error scan(std::size_t skipItems, std::function<bool (std::size_t index, const AppDescription& description)>&& callback);
     Error load(const AppDescription& description, std::uintptr_t offset, std::function<bool (std::size_t bytesWritten, std::size_t bytesTotal)>&& callback);
     void run(std::uintptr_t offset);
 };

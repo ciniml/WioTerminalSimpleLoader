@@ -101,15 +101,15 @@ static AppIconFormat getIconFormat(const char* appsRoot, const char* appName, co
 }
 
 
-bool AppManager::readDescription(const char* appsRoot, const char* appName, AppDescription& description)
+void AppManager::readDescription(const char* appsRoot, const char* appName, AppDescription& description)
 {
     auto nameSize = readMetaData(appsRoot, appName, "name", description.name.data(), description.name.max_size());
     if( nameSize ) {
         description.name.set_length(nameSize.value);
     }
     else {
-        // Name metadata is required.
-        return false;
+        // Use directory name as the app name.
+        description.name.set(appName);
     }
     
     {
@@ -126,7 +126,6 @@ bool AppManager::readDescription(const char* appsRoot, const char* appName, AppD
 
     description.authorIcon = getIconFormat(appsRoot, appName, "author");
     description.appIcon = getIconFormat(appsRoot, appName, "app");
-    return true;
 }
 
 static constexpr const char* SdBlockDevice = "/dev/mmcblka1";
@@ -147,7 +146,7 @@ SDCardMount::~SDCardMount()
     }
 }
 
-AppManager::Error AppManager::scan(std::function<bool (std::size_t index, const AppDescription& description)>&& callback)
+AppManager::Error AppManager::scan(std::size_t skipItems, std::function<bool (std::size_t index, const AppDescription& description)>&& callback)
 {
     SDCardMount mount(SdBlockDevice, SdRoot);
     if( !mount ) {
@@ -170,13 +169,16 @@ AppManager::Error AppManager::scan(std::function<bool (std::size_t index, const 
         if( fstat.fname[0] == '.' && (fstat.fname[1] == 0 || (fstat.fname[1] == '.' && fstat.fname[2] == 0)) ) {
             continue;
         }
-        if(  fstat.fattrib & SYS_FS_ATTR_DIR ) {
+        if( fstat.fattrib & SYS_FS_ATTR_DIR ) {
+            if( skipItems > 0 ) {
+                skipItems--;
+                continue;
+            }
             AppDescription description;
             const char* name = fstat.lfname[0] != 0 ? fstat.lfname : fstat.fname;
-            if( readDescription(AppsRoot, name, description) ) {
-                if( !callback(index, description) ) {
-                    break;
-                }
+            readDescription(AppsRoot, name, description);
+            if( !callback(index, description) ) {
+                break;
             }
             index++;
         }
