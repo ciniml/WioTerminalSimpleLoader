@@ -1,3 +1,24 @@
 [submodule "lgfx"]
 	path = lgfx
 	url = https://github.com/lovyan03/LovyanGFX.git
+[submodule "tiny-json"]
+	path = tiny-json
+	url = https://github.com/rafagafe/tiny-json
+[submodule "harmony/mhc"]
+	path = harmony/mhc
+	url = https://github.com/Microchip-MPLAB-Harmony/mhc.git
+[submodule "harmony/dev_packs"]
+	path = harmony/dev_packs
+	url = https://github.com/Microchip-MPLAB-Harmony/dev_packs.git
+[submodule "harmony/csp"]
+	path = harmony/csp
+	url = https://github.com/Microchip-MPLAB-Harmony/csp.git
+[submodule "harmony/CMSIS-FreeRTOS"]
+	path = harmony/CMSIS-FreeRTOS
+	url = https://github.com/Microchip-MPLAB-Harmony/CMSIS-FreeRTOS.git
+[submodule "harmony/bootloader"]
+	path = harmony/bootloader
+	url = https://github.com/Microchip-MPLAB-Harmony/bootloader.git
+[submodule "harmony/core"]
+	path = harmony/core
+	url = https://github.com/Microchip-MPLAB-Harmony/core.git

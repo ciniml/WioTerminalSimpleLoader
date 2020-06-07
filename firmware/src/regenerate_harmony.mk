@@ -1,7 +1,7 @@
 .PHONY: all
 
-HARMONY_ROOT ?= $(HOME)/Harmony3
-MHC_ROOT ?= $(HOME)/Harmony3/mhc
+HARMONY_ROOT ?= ../../harmony
+MHC_ROOT ?= $(HARMONY_ROOT)/mhc
 CMSIS_ROOT ?= $(HARMONY_ROOT)/dev_packs/arm/CMSIS/5.6.0/CMSIS
 
 all: config/default/initialization.c packs/CMSIS/CMSIS/Core/Include
