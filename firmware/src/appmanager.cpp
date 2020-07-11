@@ -244,14 +244,7 @@ AppManager::Error AppManager::load(const AppDescription& description, std::uintp
 
 void __attribute__((noreturn)) AppManager::run(std::uintptr_t offset)
 {
-    __disable_irq();
-    auto vector_top = reinterpret_cast<volatile std::uint32_t*>(offset);
-    auto reset_vector = reinterpret_cast<void (*)()>(*(vector_top + 1));
-    SCB->VTOR = offset;
-    __DSB();
-    auto stack_top = *vector_top;
-    __asm__("mov r13, %[stack_top]":: [stack_top] "r" (stack_top));
-    reset_vector();
+    SCB->AIRCR = 0x05fa0000 | (1u << 2);    // Software reset.
 }
 
 AppManager::Error AppManager::getIconPath(AppIconFormat format, const char* location, const char* baseName, char* buffer, std::size_t bufferSize)
