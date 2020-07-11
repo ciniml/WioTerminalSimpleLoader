@@ -28,7 +28,7 @@
             "miDebuggerServerAddress": "localhost:3333",
             "miDebuggerArgs": "",
             "debugServerPath": "${env:HOME}/openocd/bin/openocd",
-            "debugServerArgs": "-s ${env:HOME}/openocd/share/openocd/scripts -f interface/cmsis-dap.cfg -f ${workspaceFolder}/openocd.tcl -c \"flash_bin ${workspaceFolder}/build/SimpleLoader.bin\" -c \"echo {gdb server started}\"",
+            "debugServerArgs": "-f interface/cmsis-dap.cfg -f ${workspaceFolder}/openocd.tcl -c \"flash_bin ${workspaceFolder}/build/SimpleLoader.bin\" -c \"echo {gdb server started}\"",
             "serverStarted": "gdb server started",
             "serverLaunchTimeout": 30000,
             "filterStderr": true,
@@ -37,6 +37,39 @@
                 "engineLogging": true
             },
             "preLaunchTask": "build"
+        },
+        {
+            "name": "(gdb) attach",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/SimpleLoader.elf",
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": true,
+            "targetArchitecture": "arm",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "gdb の再フォーマットを有効にする",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "load symbols",
+                    "text": "symbol-file ${workspaceFolder}/build/SimpleLoader.elf"
+                }
+            ],
+            "miDebuggerPath": "/usr/bin/gdb-multiarch",
+            "miDebuggerServerAddress": "localhost:3333",
+            "miDebuggerArgs": "",
+            "debugServerPath": "${env:HOME}/openocd/bin/openocd",
+            "debugServerArgs": "-s ${env:HOME}/openocd/share/openocd/scripts -f interface/cmsis-dap.cfg -f ${workspaceFolder}/openocd.tcl -c \"echo {gdb server started}\"",
+            "serverStarted": "gdb server started",
+            "serverLaunchTimeout": 30000,
+            "filterStderr": true,
+            "filterStdout": false,
+            "logging": {
+                "engineLogging": true
+            }
         }
     ]
 }
