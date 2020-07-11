@@ -129,6 +129,10 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 
 int main ( void )
 {
+    /* Workaround for that PLIB DMAC driver does not reset DMAC peripheral */
+    DMAC_REGS->DMAC_CTRL = DMAC_CTRL_SWRST_Msk;
+    while(DMAC_REGS->DMAC_CTRL & DMAC_CTRL_SWRST_Msk);
+
     USER_LED_OutputEnable();
     USER_LED_Set();
     
